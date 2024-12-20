@@ -1,12 +1,5 @@
-import {
-    addDoc,
-    collection,
-    getDocs,
-    query,
-    where,
-    orderBy,
-    serverTimestamp
-} from 'firebase/firestore';import {db} from '../config/firebaseConfig';
+import {addDoc, collection, getDocs, orderBy, query, serverTimestamp, where} from 'firebase/firestore';
+import {db} from '../config/firebaseConfig';
 
 export const fetchUsers = async () => {
     try {
@@ -47,8 +40,8 @@ export const fetchRequests = async ({ userEmail, userRole }) => {
         let baseQuery = collection(db, 'user_requests');
         const conditions = [];
 
-        // If not an agronomist, filter by user email
-        if (userRole !== 'Agronomist') {
+        // If userRole is not 'Agronomist' and userEmail is valid, filter by user email
+        if (userRole !== 'Agronomist' && userEmail) {
             conditions.push(where('user_email', '==', userEmail));
         }
 
@@ -56,12 +49,12 @@ export const fetchRequests = async ({ userEmail, userRole }) => {
         conditions.push(orderBy('created_at', 'desc'));
 
         // Construct the full query
-        const q = query(baseQuery, ...conditions);
+        const q = conditions.length > 0 ? query(baseQuery, ...conditions) : baseQuery;
         const snapshot = await getDocs(q);
 
         return snapshot.docs.map(doc => ({
             id: doc.id,
-            ...doc.data()
+            ...doc.data(),
         }));
     } catch (error) {
         console.error('Error fetching requests:', error);

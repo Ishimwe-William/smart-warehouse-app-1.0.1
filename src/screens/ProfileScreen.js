@@ -42,7 +42,7 @@ export const ProfileScreen = () => {
                 {userRole === 'Admin' && (
                     <TouchableOpacity style={[baseStyles.row, baseStyles.textContainer, {borderBottomWidth: 1}]}
                                       onPress={() => {
-                                          (navigation.navigate('UsersScreen'))
+                                          (navigation.navigate('Users'))
                                       }}>
                         <Ionicons name={'people-outline'} size={32} color={'#000'} style={{marginHorizontal: 20,}}/>
                         <Text style={baseStyles.subtitle}>Manage Users</Text>

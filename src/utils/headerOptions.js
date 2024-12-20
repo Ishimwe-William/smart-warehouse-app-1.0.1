@@ -1,4 +1,4 @@
-import {View, TouchableOpacity} from "react-native";
+import {TouchableOpacity, View} from "react-native";
 import {Ionicons} from "@expo/vector-icons";
 import React from "react";
 import {useNotification} from "../context/NotificationContext";

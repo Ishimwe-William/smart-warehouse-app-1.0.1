@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import { View, Text, Alert } from 'react-native';
-import { sendEmailVerification } from 'firebase/auth';
-import { styles } from '../../utils/styles';
+import React, {useState} from 'react';
+import {Alert, Text, View} from 'react-native';
+import {sendEmailVerification} from 'firebase/auth';
+import {styles} from '../../utils/styles';
 import BigButton from '../../components/BigButton';
-import { useAuth } from '../../context/AuthContext';
+import {useAuth} from '../../context/AuthContext';
 
 export const EmailVerificationScreen = () => {
-  const { user, logout } = useAuth();
+  const {user, logout} = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingVerify, setIsLoadingVerify] = useState(false);
 
@@ -43,13 +43,14 @@ export const EmailVerificationScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Email Verification Required</Text>
-      <Text style={styles.subtitle}>Please verify your email to continue.</Text>
-      <Text style={styles.subtitle}>An email has been sent to: {user?.email}</Text>
-      <BigButton title="Resend Verification Email" handleSubmit={handleResendVerification} isLoading={isLoadingVerify} />
-      <BigButton title="I've Verified My Email" handleSubmit={handleRefresh} isLoading={isLoading} />
-      <BigButton title="Logout" handleSubmit={logout} isLoading={false} />
-    </View>
+      <View style={styles.container}>
+        <Text style={styles.title}>Email Verification Required</Text>
+        <Text style={styles.subtitle}>Please verify your email to continue.</Text>
+        <Text style={styles.subtitle}>An email has been sent to: {user?.email}</Text>
+        <BigButton title="Resend Verification Email" handleSubmit={handleResendVerification}
+                   isLoading={isLoadingVerify}/>
+        <BigButton title="I've Verified My Email" handleSubmit={handleRefresh} isLoading={isLoading}/>
+        <BigButton title="Logout" handleSubmit={logout} isLoading={false}/>
+      </View>
   );
 };

@@ -1,22 +1,13 @@
-import React, { useEffect, useState, useRef } from 'react';
-import {
-    Text,
-    TextInput,
-    View,
-    Dimensions,
-    Animated,
-    Image,
-    StyleSheet,
-    StatusBar,
-} from 'react-native';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { useNavigation } from '@react-navigation/native';
+import React, {useEffect, useRef, useState} from 'react';
+import {Animated, Dimensions, Image, StatusBar, StyleSheet, Text, TextInput, View,} from 'react-native';
+import {signInWithEmailAndPassword} from 'firebase/auth';
+import {doc, getDoc} from 'firebase/firestore';
+import {useNavigation} from '@react-navigation/native';
 import BigButton from '../../components/BigButton';
-import { styles as baseStyles } from '../../utils/styles';
-import { auth, db } from '../../config/firebaseConfig';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinkButton } from '../../components/LinkButton';
+import {styles as baseStyles} from '../../utils/styles';
+import {auth, db} from '../../config/firebaseConfig';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import {LinkButton} from '../../components/LinkButton';
 import Toast from 'react-native-toast-message';
 
 export const LoginScreen = () => {

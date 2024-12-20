@@ -1,19 +1,19 @@
-import {useState, useEffect} from "react";
-import {Modal, TextInput, StyleSheet, TouchableOpacity, Dimensions, ScrollView, Text, View, Alert} from "react-native";
+import {useEffect, useLayoutEffect, useState} from "react";
+import {Alert, Dimensions, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View} from "react-native";
 import {useNavigation} from '@react-navigation/native';
 import {SafeAreaView} from "react-native-safe-area-context";
 import {styles as baseStyles} from "../../utils/styles";
 import {MyButton} from "../../components/MyButton";
-import {middleColor, highColor, lowColor} from "../../utils/colors";
+import {highColor, lowColor, middleColor} from "../../utils/colors";
 import {DataStatus} from "../../components/DataStatus";
 import {
-    fetchMostRecentData, fetchNotifications,
+    fetchMostRecentData,
+    fetchNotifications,
     fetchThresholds,
     saveNotificationToFirebase,
     updateThresholds
 } from "../../utils/rtdbUtils";
 import IndicatorGrid from "../../components/IndicatorGrid";
-import {useLayoutEffect} from "react";
 import {useAuth} from "../../context/AuthContext";
 
 const {width, height} = Dimensions.get("window");

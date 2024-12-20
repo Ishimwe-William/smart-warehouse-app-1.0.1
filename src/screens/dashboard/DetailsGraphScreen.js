@@ -1,13 +1,13 @@
 import {
-    SafeAreaView,
-    View,
-    Text,
-    StyleSheet,
+    ActivityIndicator,
     Dimensions,
     Modal,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
     TouchableOpacity,
-    ActivityIndicator,
-    ScrollView
+    View
 } from "react-native";
 import {LineChart} from "react-native-chart-kit";
 import {MaterialIcons} from "@expo/vector-icons";
@@ -18,9 +18,8 @@ import {TimeframeSelector} from '../../components/TimeframeSelector';
 import {LinkButton} from "../../components/LinkButton";
 import {styles as baseStyles} from '../../utils/styles';
 import {primaryColor} from "../../utils/colors";
-import {useState} from "react";
+import {useLayoutEffect, useState} from "react";
 import {useNavigation} from "@react-navigation/native";
-import {useLayoutEffect} from "react";
 
 const {width, height} = Dimensions.get("window");
 const isTablet = Math.min(width, height) >= 600;
