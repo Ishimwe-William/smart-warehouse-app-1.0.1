@@ -8,17 +8,18 @@ import { useAuth } from '../../context/AuthContext';
 export const EmailVerificationScreen = () => {
   const { user, logout } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingVerify, setIsLoadingVerify] = useState(false);
 
   const handleResendVerification = async () => {
     if (user) {
       try {
-        setIsLoading(true);
+        setIsLoadingVerify(true);
         await sendEmailVerification(user);
         Alert.alert('Verification Email Sent', 'Please check your email to verify your account.');
       } catch (error) {
         Alert.alert('Error', 'Failed to send verification email. Please try again.');
       } finally {
-        setIsLoading(false);
+        setIsLoadingVerify(false);
       }
     }
   };
@@ -46,7 +47,7 @@ export const EmailVerificationScreen = () => {
       <Text style={styles.title}>Email Verification Required</Text>
       <Text style={styles.subtitle}>Please verify your email to continue.</Text>
       <Text style={styles.subtitle}>An email has been sent to: {user?.email}</Text>
-      <BigButton title="Resend Verification Email" handleSubmit={handleResendVerification} isLoading={isLoading} />
+      <BigButton title="Resend Verification Email" handleSubmit={handleResendVerification} isLoading={isLoadingVerify} />
       <BigButton title="I've Verified My Email" handleSubmit={handleRefresh} isLoading={isLoading} />
       <BigButton title="Logout" handleSubmit={logout} isLoading={false} />
     </View>

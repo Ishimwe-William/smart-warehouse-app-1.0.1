@@ -233,7 +233,7 @@ export const DashboardScreen = () => {
                         <DataStatus data={data.temp} dataName={"Temperature"} statusColor={tempRangeColor}/>
                         <DataStatus data={data.hum} dataName={"Humidity"} statusColor={humRangeColor}/>
                     </View>
-                    <MyButton HandleOnPress={() => navigation.navigate('DetailsGraphScreen')}
+                    <MyButton HandleOnPress={() => navigation.navigate('DetailsGraph')}
                               ButtonText={"View Data Graph"}/>
                 </SafeAreaView>
             </ScrollView>

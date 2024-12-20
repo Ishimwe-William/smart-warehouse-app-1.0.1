@@ -3,7 +3,7 @@ import {Ionicons} from "@expo/vector-icons";
 import React from "react";
 import {useNotification} from "../context/NotificationContext";
 
-export const headerOptions = ({navigation}) => {
+export const defaultHeaderOptions = ({navigation, route}) => {
     const {unreadNotifications} = useNotification();
 
     const handleNotPress = () => {
@@ -11,7 +11,7 @@ export const headerOptions = ({navigation}) => {
     };
 
     return {
-        headerTitle: "",
+        headerTitle: route.name,
         headerStyle: {
             backgroundColor: "#fff",
             borderBottomWidth: 3,

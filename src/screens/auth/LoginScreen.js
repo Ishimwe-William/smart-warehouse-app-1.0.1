@@ -7,7 +7,6 @@ import {
     Animated,
     Image,
     StyleSheet,
-    Platform,
     StatusBar,
 } from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
@@ -54,9 +53,6 @@ export const LoginScreen = () => {
                 text1: 'Login Successful',
                 text2: `Welcome back, ${role}!`,
             });
-
-            // Navigate to your app's main screen after successful login
-            navigation.replace('HomeScreen');
         } catch (error) {
             if (error.code === 'auth/user-not-found') {
                 Toast.show({

@@ -169,7 +169,7 @@ export const DetailsGraphScreen = () => {
                         weight={'400'}
                         color='#5A9AA9'
                         title="View Raw Data"
-                        onClick={() => navigation.navigate('DetailsTableScreen')}
+                        onClick={() => navigation.navigate('DetailsTable')}
                     />
                 </View>
             </ScrollView>
