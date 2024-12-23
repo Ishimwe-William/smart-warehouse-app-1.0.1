@@ -16,31 +16,52 @@ export const RequestStatusModal = ({
     const [mode, setMode] = useState('approve');
     const {user} = useAuth();
     const [useLoggedInEmail, setUseLoggedInEmail] = useState(true);
+    const [isLoading, setIsLoading] = useState(false)
     const [formData, setFormData] = useState({
         agronomistPhone: '',
         scheduledDate: new Date(),
         cancellationReason: '',
         notes: '',
-        agronomist_email: '',
+        agronomistEmail: '',
     });
 
     const handleSubmit = async () => {
         try {
-            if (!useLoggedInEmail) {
-                if (!formData.agronomist_email) {
-                    Alert.alert('Error', 'Please enter an email address');
-                    return;
-                }
-                if (!validateEmail(formData.agronomist_email)) {
-                    Alert.alert('Error', 'Please enter a valid email address');
-                    return;
-                }
-            }
-
-            // Phone number validation
+            setIsLoading(true);
             if (mode === 'approve') {
+                // Validate phone number
                 if (!/^07\d{8}$/.test(formData.agronomistPhone)) {
-                    Alert.alert('Error', 'Please enter a valid phone number starting with 07 and followed by 8 digits.');
+                    Alert.alert('Error', 'Please enter a valid Rwandan phone number starting with 07 and having 10 digits.');
+                    return;
+                }
+
+                // Validate scheduled date
+                if (!formData.scheduledDate || isNaN(new Date(formData.scheduledDate).getTime())) {
+                    Alert.alert('Error', 'Please select a valid date and time.');
+                    return;
+                }
+
+                // Validate notes
+                if (!formData.notes.trim()) {
+                    Alert.alert('Error', 'Please enter additional notes.');
+                    return;
+                }
+
+                // Validate email if not using the logged-in user's email
+                if (!useLoggedInEmail) {
+                    if (!formData.agronomistEmail.trim()) {
+                        Alert.alert('Error', 'Please enter an email address.');
+                        return;
+                    }
+                    if (!validateEmail(formData.agronomistEmail)) {
+                        Alert.alert('Error', 'Please enter a valid email address.');
+                        return;
+                    }
+                }
+            } else if (mode === 'cancel') {
+                // Validate cancellation reason
+                if (!formData.cancellationReason.trim()) {
+                    Alert.alert('Error', 'Please provide a reason for rejection.');
                     return;
                 }
             }
@@ -51,7 +72,7 @@ export const RequestStatusModal = ({
                     agronomistPhone: formData.agronomistPhone,
                     scheduledDate: formData.scheduledDate,
                     notes: formData.notes,
-                    agronomist_email: useLoggedInEmail ? user.email : formData.agronomist_email
+                    agronomistEmail: useLoggedInEmail ? user.email : formData.agronomistEmail
                 } : {
                     cancellationReason: formData.cancellationReason
                 })
@@ -60,15 +81,16 @@ export const RequestStatusModal = ({
             await updateRequestStatus(requestId, statusData);
             Alert.alert(
                 'Success',
-                `Request ${mode === 'approve' ? 'approved' : 'cancelled'} successfully`
+                `Request ${mode === 'approve' ? 'approved' : 'rejected'} successfully`
             );
             onStatusUpdated();
             onClose();
         } catch (error) {
             Alert.alert('Error', error.message);
+        } finally {
+            setIsLoading(false)
         }
     };
-
 
     const handleShowDatePicker = () => {
         DateTimePickerAndroid.open({
@@ -127,7 +149,7 @@ export const RequestStatusModal = ({
                     onValueChange={(newValue) => {
                         setUseLoggedInEmail(newValue);
                         if (newValue) {
-                            setFormData(prev => ({...prev, agronomist_email: ''}));
+                            setFormData(prev => ({...prev, agronomistEmail: ''}));
                         }
                     }}
                     trackColor={{false: '#767577', true: primaryColor}}
@@ -140,8 +162,8 @@ export const RequestStatusModal = ({
                     <Text style={styles.label}>Email Address</Text>
                     <TextInput
                         style={styles.input}
-                        value={formData.agronomist_email}
-                        onChangeText={(text) => setFormData(prev => ({...prev, agronomist_email: text}))}
+                        value={formData.agronomistEmail}
+                        onChangeText={(text) => setFormData(prev => ({...prev, agronomistEmail: text}))}
                         placeholder="Enter email address"
                         keyboardType="email-address"
                         autoCapitalize="none"
@@ -181,12 +203,12 @@ export const RequestStatusModal = ({
 
     const renderCancellationForm = () => (
         <>
-            <Text style={styles.label}>Reason for Cancellation</Text>
+            <Text style={styles.label}>Reason for Rejection</Text>
             <TextInput
                 style={[styles.input, styles.textArea]}
                 value={formData.cancellationReason}
                 onChangeText={(text) => setFormData(prev => ({...prev, cancellationReason: text}))}
-                placeholder="Enter reason for cancellation"
+                placeholder="Enter reason for Rejection"
                 multiline
             />
         </>
@@ -199,11 +221,11 @@ export const RequestStatusModal = ({
             transparent
             onRequestClose={onClose}
         >
-            <ScrollView>
+            <ScrollView contentContainerStyle={{flexGrow: 1}}>
                 <View style={styles.modalContainer}>
                     <View style={styles.modalContent}>
                         <Text style={styles.modalTitle}>
-                            {mode === 'approve' ? 'Approve Request' : 'Cancel Request'}
+                            {mode === 'approve' ? 'Approve Request' : 'Reject Request'}
                         </Text>
 
                         <View style={styles.toggleContainer}>
@@ -222,7 +244,7 @@ export const RequestStatusModal = ({
                             >
                                 <Text
                                     style={[styles.toggleButtonText, mode === 'cancel' && styles.toggleButtonTextActive]}>
-                                    Cancel
+                                    Reject
                                 </Text>
                             </TouchableOpacity>
                         </View>
@@ -237,10 +259,11 @@ export const RequestStatusModal = ({
                                 <Text style={styles.buttonText}>Close</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
+                                disabled={isLoading}
                                 style={[styles.button, styles.submitButton]}
                                 onPress={handleSubmit}
                             >
-                                <Text style={styles.buttonText}>Submit</Text>
+                                <Text style={styles.buttonText}>{isLoading ? 'Loading...' : 'Submit'}< /Text>
                             </TouchableOpacity>
                         </View>
                     </View>

@@ -4,6 +4,7 @@ import {
     FlatList,
     Modal,
     RefreshControl,
+    ScrollView,
     StyleSheet,
     Text,
     TextInput,
@@ -19,6 +20,7 @@ import {useAuth} from "../../context/AuthContext";
 import {fetchRequests, sendRequest} from "../../utils/firestoreUtil";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {RequestStatusModal} from "../../components/RequestStatusModal";
+import {RequestStatus} from "../../utils/RequestStatus";
 
 export default function RequestsScreen() {
     const [selectedView, setSelectedView] = useState("all"); // Track selected view state
@@ -104,7 +106,6 @@ export default function RequestsScreen() {
         return true;
     };
 
-
     const handleSend = async () => {
         if (!validateForm()) return;
 
@@ -162,6 +163,7 @@ export default function RequestsScreen() {
     // Fetch requests on component mount and when view changes
     useEffect(() => {
         fetchRequestsData();
+
     }, [fetchRequestsData]);
 
     const handleToggleExpand = (id) => {
@@ -169,13 +171,14 @@ export default function RequestsScreen() {
         setExpandedRequestId((prevId) => (prevId === id ? null : id));
     };
 
-
-    const renderRequestItem = ({item}) => {
-        const date = item.created_at?.toDate();
-        const formattedDate = date
+    const formattedDate = (unformatedDate) => {
+        const date = unformatedDate.toDate();
+        return date
             ? `${date.getDate().toString().padStart(2, '0')}-${date.toLocaleString('en', {month: 'short'})}-${date.getFullYear().toString().substring(2)} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
             : 'Date not available';
+    }
 
+    const renderRequestItem = ({item}) => {
         const isExpanded = item.id === expandedRequestId;
 
         const statusColor =
@@ -206,31 +209,70 @@ export default function RequestsScreen() {
         };
 
         return (
-            <TouchableOpacity onPress={() => handleToggleExpand(item.id)} style={styles.requestItem}>
-                <View style={[baseStyles.row, {justifyContent: "space-between"}]}>
-                    <Text style={styles.requestType}>{item.type}</Text>
-                    <View
-                        style={[
-                            baseStyles.statusIndicator,
-                            {
-                                backgroundColor: statusColor,
-                                height: 10,
-                                width: 10,
-                            },
-                        ]}
-                    />
-                    <Text style={baseStyles.dateText}>Created: {formattedDate}</Text>
+            <>
+                <View style={styles.requestItem}>
+                    {/* Collapsed View */}
+                    <TouchableOpacity onPress={() => handleToggleExpand(item.id)} style={styles.rowBetween}>
+                        <Text style={styles.requestType}>{item.type}</Text>
+                        <View style={[styles.statusIndicator, {backgroundColor: statusColor}]}/>
+                        <Text style={styles.dateText}>Created: {formattedDate(item.created_at)}</Text>
+                    </TouchableOpacity>
+
+                    {/* Expanded View */}
+                    {isExpanded && (
+                        <>
+                            <View style={styles.rowBetween}>
+                                <View>
+                                    <Text style={styles.requestDetails}>Name: {item.name}</Text>
+                                    <Text style={styles.requestDetails}>Phone: {item.phone}</Text>
+                                </View>
+                                {renderStatusAction()}
+                            </View>
+
+                            {item.status !== RequestStatus.WAITING && (
+                                <>
+                                    <View style={styles.separator}/>
+                                    <View style={styles.rowBetween}>
+                                        <Text style={styles.requestInfo}>Schedule Info:</Text>
+                                        <Text style={styles.dateText}>Updated: {formattedDate(item.updated_at)}</Text>
+                                    </View>
+                                    {item.status === RequestStatus.APPROVED && (
+                                        <View>
+                                            <Text style={styles.requestDetails}>
+                                                Time: {formattedDate(item.scheduled_date)}
+                                            </Text>
+                                            <View style={styles.rowBetween}>
+                                                <Text style={[styles.requestDetails, {fontWeight: 'bold'}]}>Agronomist
+                                                    Phone:</Text>
+                                                <Text style={[styles.requestDetails, {fontWeight: 'bold'}]}>Agronomist
+                                                    Email:</Text>
+                                            </View>
+                                            <View style={styles.rowBetween}>
+                                                <Text style={styles.requestDetails}
+                                                      dataDetectorType={'phoneNumber'}>{item.agronomist_phone}</Text>
+                                                <Text style={styles.requestDetails}
+                                                      dataDetectorType={'email'}>{item.agronomist_email}</Text>
+                                            </View>
+                                        </View>
+                                    )}
+                                    {item.status === RequestStatus.CANCELLED && (
+                                        <View>
+                                            <Text style={[styles.requestDetails, {fontWeight: 'bold'}]}>
+                                                Reason:
+                                            </Text>
+                                            <Text style={styles.requestDetails} numberOfLines={4}
+                                                  ellipsizeMode={'tail'}>
+                                                {item?.cancellationReason}</Text>
+                                        </View>
+                                    )}
+                                </>
+                            )}
+
+
+                        </>
+                    )}
                 </View>
-                {isExpanded && (
-                    <View style={[baseStyles.row, {justifyContent: "space-between"}]}>
-                        <View style={{flexDirection: "column"}}>
-                            <Text style={styles.requestDetails}>Name: {item.name}</Text>
-                            <Text style={styles.requestDetails}>Phone: {item.phone}</Text>
-                        </View>
-                        {renderStatusAction()}
-                    </View>
-                )}
-            </TouchableOpacity>
+            </>
         );
     };
 
@@ -308,61 +350,62 @@ export default function RequestsScreen() {
 
             {/* Modal for Sending Requests */}
             <Modal visible={isModalVisible} animationType="slide" transparent>
-                <View style={styles.modalContainer}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Send Request</Text>
+                <ScrollView contentContainerStyle={{flexGrow: 1}}>
+                    <View style={styles.modalContainer}>
+                        <View style={styles.modalContent}>
+                            <Text style={styles.modalTitle}>Send Request</Text>
 
-                        {/* Option Field */}
-                        <Text style={styles.label}>Select Request Type</Text>
-                        {requestTypes.map((type) => (
-                            <TouchableOpacity
-                                key={type.value}
-                                style={[
-                                    styles.optionButton,
-                                    formData.selectedOption === type.value && styles.selectedOption,
-                                ]}
-                                onPress={() => handleInputChange("selectedOption", type.value)}
-                            >
-                                <Text style={styles.optionText}>{type.value}</Text>
-                                {formData.selectedOption === type.value && (
-                                    <Text style={styles.optionDescription}>{type.description}</Text>
-                                )}
-                            </TouchableOpacity>
-                        ))}
+                            {/* Option Field */}
+                            <Text style={styles.label}>Select Request Type</Text>
+                            {requestTypes.map((type) => (
+                                <TouchableOpacity
+                                    key={type.value}
+                                    style={[
+                                        styles.optionButton,
+                                        formData.selectedOption === type.value && styles.selectedOption,
+                                    ]}
+                                    onPress={() => handleInputChange("selectedOption", type.value)}
+                                >
+                                    <Text style={styles.optionText}>{type.value}</Text>
+                                    {formData.selectedOption === type.value && (
+                                        <Text style={styles.optionDescription}>{type.description}</Text>
+                                    )}
+                                </TouchableOpacity>
+                            ))}
 
-                        {/* Phone Input */}
-                        <Text style={styles.label}>Phone</Text>
-                        <TextInput
-                            style={styles.input}
-                            maxLength={10}
-                            placeholder="07xxxxxxxx"
-                            keyboardType="phone-pad"
-                            value={formData.phone}
-                            onChangeText={(text) => handleInputChange("phone", text)}
-                        />
+                            {/* Phone Input */}
+                            <Text style={styles.label}>Phone</Text>
+                            <TextInput
+                                style={styles.input}
+                                maxLength={10}
+                                placeholder="07xxxxxxxx"
+                                keyboardType="phone-pad"
+                                value={formData.phone}
+                                onChangeText={(text) => handleInputChange("phone", text)}
+                            />
 
-                        {/* Name Input */}
-                        <Text style={styles.label}>Name</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Enter name or cooperative name"
-                            value={formData.name}
-                            onChangeText={(text) => handleInputChange("name", text)}
-                        />
+                            {/* Name Input */}
+                            <Text style={styles.label}>Name</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Enter name or cooperative name"
+                                value={formData.name}
+                                onChangeText={(text) => handleInputChange("name", text)}
+                            />
 
-                        {/* Modal Buttons */}
-                        <View style={styles.buttonContainer}>
-                            <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
-                                <Text style={styles.buttonText}>Cancel</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
-                                <Text style={styles.buttonText}>Send</Text>
-                            </TouchableOpacity>
+                            {/* Modal Buttons */}
+                            <View style={styles.buttonContainer}>
+                                <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
+                                    <Text style={styles.buttonText}>Cancel</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
+                                    <Text style={styles.buttonText}>Send</Text>
+                                </TouchableOpacity>
+                            </View>
                         </View>
                     </View>
-                </View>
+                </ScrollView>
             </Modal>
-
             <RequestStatusModal
                 visible={statusModalVisible}
                 onClose={() => {
@@ -377,6 +420,59 @@ export default function RequestsScreen() {
 }
 
 const styles = StyleSheet.create({
+    requestItem: {
+        marginVertical: 8,
+        padding: 12,
+        borderRadius: 8,
+        backgroundColor: "#fff",
+        shadowColor: "#000",
+        shadowOpacity: 0.1,
+        shadowOffset: {width: 0, height: 1},
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    rowBetween: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+    },
+    requestType: {
+        fontSize: 16,
+        fontWeight: "bold",
+        borderRadius: 5,
+        backgroundColor: 'rgba(250,139,1,0.15)',
+        paddingHorizontal: 5,
+        color: "#000",
+    },
+    requestInfo: {
+        fontSize: 16,
+        fontWeight: "bold",
+        color: "#000",
+    },
+    statusIndicator: {
+        height: 10,
+        width: 10,
+        borderRadius: 5,
+    },
+    dateText: {
+        fontSize: 12,
+        color: "#555",
+    },
+    requestDetails: {
+        fontSize: 14,
+        color: "#444",
+    },
+    separator: {
+        height: 1,
+        backgroundColor: "#ddd",
+        marginVertical: 8,
+    },
+    scheduleTitle: {
+        fontSize: 14,
+        fontWeight: "600",
+    },
+
+
     requestContainer: {
         justifyContent: "space-around",
         width: "100%",
@@ -469,24 +565,5 @@ const styles = StyleSheet.create({
     buttonText: {
         color: "#fff",
         fontWeight: "bold",
-    },
-
-    //
-    requestItem: {
-        backgroundColor: '#f9f9f9',
-        padding: 15,
-        marginVertical: 8,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#e0e0e0'
-    },
-    requestType: {
-        fontSize: 14,
-        fontWeight: 'bold',
-        color: primaryColor
-    },
-    requestDetails: {
-        fontSize: 13,
-        marginTop: 5
     },
 });

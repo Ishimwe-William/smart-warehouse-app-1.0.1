@@ -79,32 +79,52 @@ export const updateRequestStatus = async (requestId, statusData) => {
     try {
         const {status, ...additionalData} = statusData;
 
-        console.log(statusData)
         // Update the request document
         const requestRef = doc(db, 'user_requests', requestId);
         await updateDoc(requestRef, {
             status,
             updated_at: serverTimestamp(),
-            ...(status === RequestStatus.APPROVED && {
-                agronomist_email: additionalData.agronomist_email,
+            ...(status === RequestStatus.APPROVED ? {
+                agronomist_email: additionalData.agronomistEmail,
                 agronomist_phone: additionalData.agronomistPhone,
-                scheduled_date: additionalData.scheduledDate
-            })
+                scheduled_date: additionalData.scheduledDate,
+            } : (
+                {cancellationReason: additionalData.cancellationReason}
+            )),
         });
 
-        // Create status history record
-        await addDoc(collection(db, 'request_status_history'), {
-            request_id: requestId,
-            status,
-            created_at: serverTimestamp(),
-            ...additionalData
-        });
+        // Check if a status history record exists for the request
+        const historyQuery = query(
+            collection(db, 'request_status_history'),
+            where('request_id', '==', requestId)
+        );
 
+        const historySnapshot = await getDocs(historyQuery);
+
+        if (!historySnapshot.empty) {
+            // Update the existing history record
+            const historyDoc = historySnapshot.docs[0]; // Assuming only one record per request
+            const historyRef = doc(db, 'request_status_history', historyDoc.id);
+            await updateDoc(historyRef, {
+                status,
+                updated_at: serverTimestamp(),
+                ...additionalData,
+            });
+        } else {
+            // Create a new status history record if none exists
+            await addDoc(collection(db, 'request_status_history'), {
+                request_id: requestId,
+                status,
+                created_at: serverTimestamp(),
+                ...additionalData,
+            });
+        }
     } catch (error) {
         console.error('Error updating request status:', error);
         throw new Error('Failed to update request status');
     }
 };
+
 
 /**
  * Fetches status history for a request
