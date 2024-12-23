@@ -1,24 +1,24 @@
-import React, {useCallback, useEffect, useState} from "react";
+import React, {useCallback, useEffect, useLayoutEffect, useState} from "react";
 import {
-    StyleSheet,
-    Text,
     Alert,
-    TouchableOpacity,
-    View,
-    TextInput,
+    FlatList,
     Modal,
     RefreshControl,
-    FlatList
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from "react-native";
 import SwitchSelector from "react-native-switch-selector";
 import {highColor, lowColor, middleColor, primaryColor} from "../../utils/colors";
 import {styles as baseStyles} from "../../utils/styles";
-import {useLayoutEffect} from "react";
 import {useNavigation} from "@react-navigation/native";
 import {MyButton} from "../../components/MyButton";
 import {useAuth} from "../../context/AuthContext";
 import {fetchRequests, sendRequest} from "../../utils/firestoreUtil";
 import {SafeAreaView} from "react-native-safe-area-context";
+import {RequestStatusModal} from "../../components/RequestStatusModal";
 
 export default function RequestsScreen() {
     const [selectedView, setSelectedView] = useState("all"); // Track selected view state
@@ -28,7 +28,8 @@ export default function RequestsScreen() {
         phone: "",
         name: "",
     });
-
+    const [statusModalVisible, setStatusModalVisible] = useState(false);
+    const [selectedRequestId, setSelectedRequestId] = useState(null);
     const [requests, setRequests] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [expandedRequestId, setExpandedRequestId] = useState(null); // Track expanded request ID
@@ -47,7 +48,6 @@ export default function RequestsScreen() {
 
     const handleCancel = () => {
         setModalVisible(false);
-        // Clear form fields
         setFormData({
             selectedOption: "",
             phone: "",
@@ -188,7 +188,13 @@ export default function RequestsScreen() {
         const renderStatusAction = () => {
             if (item.status === "waiting") {
                 if (userRole === "Admin" || userRole === "Agronomist") {
-                    return <MyButton ButtonText={"Approve"} HandleOnPress={() => console.log("approving")}/>;
+                    return <MyButton
+                        ButtonText={"Respond"}
+                        HandleOnPress={() => {
+                            setSelectedRequestId(item.id);
+                            setStatusModalVisible(true);
+                        }}
+                    />;
                 }
                 return <Text style={[baseStyles.subtitle, {color: lowColor}]}>Pending approval</Text>;
             }
@@ -356,6 +362,16 @@ export default function RequestsScreen() {
                     </View>
                 </View>
             </Modal>
+
+            <RequestStatusModal
+                visible={statusModalVisible}
+                onClose={() => {
+                    setStatusModalVisible(false);
+                    setSelectedRequestId(null);
+                }}
+                requestId={selectedRequestId}
+                onStatusUpdated={fetchRequestsData}
+            />
         </SafeAreaView>
     );
 }
