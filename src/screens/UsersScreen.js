@@ -1,16 +1,25 @@
-import React, { useEffect, useState } from 'react';
-import { SafeAreaView, Text, FlatList, TouchableOpacity, Modal, View, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
-import { styles as baseStyles } from "../utils/styles";
-import { fetchUsers } from '../utils/firestoreUtil';
-import { getAuth } from 'firebase/auth';
-import { MyButton } from '../components/MyButton';
-import { db } from '../config/firebaseConfig';
-import { doc, updateDoc } from 'firebase/firestore';
+import React, {useEffect, useLayoutEffect, useState} from 'react';
+import {
+    ActivityIndicator,
+    FlatList,
+    Modal,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
+} from 'react-native';
+import {styles as baseStyles} from "../utils/styles";
+import {fetchUsers} from '../utils/firestoreUtil';
+import {getAuth} from 'firebase/auth';
+import {MyButton} from '../components/MyButton';
+import {db} from '../config/firebaseConfig';
+import {doc, updateDoc} from 'firebase/firestore';
 import MessagePopup from '../components/MessagePopup';
-import {useLayoutEffect} from "react";
 import {useNavigation} from "@react-navigation/native";
 
-const MyRoles = ['User', 'Admin', 'Manager', 'Farmer', "Agronomist"];
+const MyRoles = ['User', 'Admin', "Agronomist"];
 
 export const UsersScreen = () => {
     const [isLoading, setIsLoading] = useState(false);

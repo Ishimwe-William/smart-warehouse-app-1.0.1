@@ -18,15 +18,22 @@ import {TimeframeSelector} from '../../components/TimeframeSelector';
 import {LinkButton} from "../../components/LinkButton";
 import {styles as baseStyles} from '../../utils/styles';
 import {primaryColor} from "../../utils/colors";
-import {useLayoutEffect, useState} from "react";
+import {useEffect, useLayoutEffect, useState} from "react";
 import {useNavigation} from "@react-navigation/native";
+import PointsControl from "../../components/PointsControl";
 
 const {width, height} = Dimensions.get("window");
 const isTablet = Math.min(width, height) >= 600;
 
-const POINTS_TO_SHOW = isTablet ? 7 : 5; // Number of data points to show at once
-
 export const DetailsGraphScreen = () => {
+    const navigation = useNavigation();
+    const DEFAULT_POINTS = isTablet ? 7 : 5;
+
+    const [pointsToShow, setPointsToShow] = useState(DEFAULT_POINTS);
+    const [selectedPoint, setSelectedPoint] = useState(null);
+    const [isModalVisible, setIsModalVisible] = useState(false);
+    const [visibleDataStart, setVisibleDataStart] = useState(0);
+    const [showDots, setShowDots] = useState(true);
     const {
         data,
         timeframe,
@@ -38,16 +45,18 @@ export const DetailsGraphScreen = () => {
         setCustomEndDate
     } = useWarehouseData();
 
-    const [selectedPoint, setSelectedPoint] = useState(null);
-    const [isModalVisible, setIsModalVisible] = useState(false);
-    const [visibleDataStart, setVisibleDataStart] = useState(0);
-    const navigation = useNavigation();
-
     useLayoutEffect(() => {
         navigation.setOptions({
             headerTitle: "Warehouse Data",
         });
     }, []);
+
+    useEffect(() => {
+        // Reset visible data start when points change to prevent out-of-bounds issues
+        if (visibleDataStart + pointsToShow > data.length) {
+            setVisibleDataStart(Math.max(0, data.length - pointsToShow));
+        }
+    }, [pointsToShow, data.length]);
 
     const chartConfig = {
         backgroundColor: "#e26a00",
@@ -56,53 +65,74 @@ export const DetailsGraphScreen = () => {
         color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
         labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
         propsForLabels: {
-            fontSize: isTablet ? 14 : 10, // Adjust font size for tablets
+            fontSize: isTablet ? 14 : 10,
         },
         propsForVerticalLabels: {
-            rotation: isTablet ? 0 : -45, // Avoid rotation on tablets for clarity
+            rotation: isTablet ? 0 : -45,
         },
         propsForDots: {
-            r: isTablet ? "8" : "6", // Larger dots for tablets
+            r: isTablet ? "10" : "8",
             strokeWidth: "2",
             stroke: "#ffa726",
         },
+        // Set fixed Y axis configuration
+        segments: 5,
+        formatYLabel: (value) => Math.round(value).toString(),
     };
 
-    // Function to get the currently visible data slice
     const getVisibleData = () => {
-        const visibleData = data.slice(visibleDataStart, visibleDataStart + POINTS_TO_SHOW);
+        const visibleData = data.slice(visibleDataStart, visibleDataStart + pointsToShow);
+
         return {
-            labels: visibleData.map((item) => {
-                const dateObj = new Date(item.createdAt);
-                const time = dateObj.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
-                const date = dateObj.toLocaleDateString([], {day: '2-digit', month: 'short'});
-                return `${time}\n${date}`;
-            }),
+            labels: [
+                "", // Label for 0 point
+                ...visibleData.map((item) => {
+                    const dateObj = new Date(item.createdAt);
+                    const time = dateObj.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+                    const date = dateObj.toLocaleDateString([], {day: '2-digit', month: 'short'});
+                    return `${time}\n${date}`;
+                }),
+                "" // Label for 100 point
+            ],
             datasets: [
                 {
                     data: visibleData.map((item) => item.temperature),
                     color: (opacity = 1) => `rgba(255, 0, 0, ${opacity})`,
                     strokeWidth: 5,
+                    withDots: showDots,  // Show dots
+                    hidePointsAtIndex: [0, visibleData.length + 1]  // Hide dots for first and last points (0 and 100)
                 },
                 {
                     data: visibleData.map((item) => item.humidity),
                     color: (opacity = 1) => `rgba(0, 0, 255, ${opacity})`,
                     strokeWidth: 5,
+                    withDots: showDots,  // Show dots
+                    hidePointsAtIndex: [0, visibleData.length + 1]  // Hide dots for first and last points (0 and 100)
+                },
+                {
+                    data: [0],
+                    withDots: false
+                },
+                {
+                    data: [100],
+                    withDots: false,
                 },
             ],
-            legend: ["Temperature (°C)", "Humidity (%)"],
+            legend: ["Temperature (°C)", "Humidity (%)"]
         };
     };
 
-    // Handle scrolling
     const handleScroll = (direction) => {
         if (direction === 'left' && visibleDataStart > 0) {
-            setVisibleDataStart(prev => Math.max(0, prev - POINTS_TO_SHOW));
-        } else if (direction === 'right' && visibleDataStart + POINTS_TO_SHOW < data.length) {
-            setVisibleDataStart(prev => Math.min(data.length - POINTS_TO_SHOW, prev + POINTS_TO_SHOW));
+            setVisibleDataStart(prev => Math.max(0, prev - pointsToShow));
+        } else if (direction === 'right' && visibleDataStart + pointsToShow < data.length) {
+            setVisibleDataStart(prev => Math.min(data.length - pointsToShow, prev + pointsToShow));
         }
     };
 
+    const handlePointsChange = (newPoints) => {
+        setPointsToShow(newPoints);
+    };
     return (
         <SafeAreaView style={{flex: 1}}>
             <ScrollView>
@@ -122,7 +152,6 @@ export const DetailsGraphScreen = () => {
                         <Text style={baseStyles.subtitle}>No data found in {`${timeframe} time`}</Text>
                     ) : (
                         <View style={styles.graphContainer}>
-                            {/* Left scroll button */}
                             <TouchableOpacity
                                 style={[styles.scrollButton, {left: 0}]}
                                 onPress={() => handleScroll('left')}
@@ -137,7 +166,7 @@ export const DetailsGraphScreen = () => {
 
                             <LineChart
                                 data={getVisibleData()}
-                                width={Dimensions.get("window").width - (isTablet ? 100 : 80)} // Adjusted for scroll buttons
+                                width={Dimensions.get("window").width - (isTablet ? 100 : 80)}
                                 height={300}
                                 chartConfig={chartConfig}
                                 bezier
@@ -149,20 +178,29 @@ export const DetailsGraphScreen = () => {
                                 }}
                             />
 
-                            {/* Right scroll button */}
                             <TouchableOpacity
                                 style={[styles.scrollButton, {right: 0}]}
                                 onPress={() => handleScroll('right')}
-                                disabled={visibleDataStart + POINTS_TO_SHOW >= data.length}
+                                disabled={visibleDataStart + pointsToShow >= data.length}
                             >
                                 <MaterialIcons
                                     name="chevron-right"
                                     size={24}
-                                    color={visibleDataStart + POINTS_TO_SHOW >= data.length ? "#ccc" : primaryColor}
+                                    color={visibleDataStart + pointsToShow >= data.length ? "#ccc" : primaryColor}
                                 />
                             </TouchableOpacity>
                         </View>
                     )}
+
+                    <PointsControl
+                        initialPoints={pointsToShow}
+                        onPointsChange={handlePointsChange}
+                        minPoints={isTablet ? 5 : 3}
+                        maxPoints={100}
+                        setShowDots={setShowDots}
+                        showDots={showDots}
+                    />
+
                     <LinkButton
                         size={14}
                         weight={'400'}

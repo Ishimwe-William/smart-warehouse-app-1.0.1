@@ -1,10 +1,8 @@
-import {useState, useEffect} from "react";
-import {StyleSheet, Switch, Text, TouchableOpacity, View} from "react-native";
+import {useEffect, useLayoutEffect, useState} from "react";
+import {StyleSheet, Switch, Text, View} from "react-native";
 import {listenToValue, updateValue} from "../utils/rtdbUtils";
-import {MyButton} from "../components/MyButton";
-import {useLayoutEffect} from "react";
-import {Ionicons} from "@expo/vector-icons";
 import {useNavigation} from "@react-navigation/native";
+import {styles as baseStyles} from "../utils/styles";
 
 const switch1Path = "/warehouse/switches/switch1";
 
@@ -14,7 +12,7 @@ export default function SettingsScreen() {
 
     useLayoutEffect(() => {
         navigation.setOptions({
-            headerTitle: "Settings",
+            headerTitle: "Warehouse System Control",
         });
     }, []);
 
@@ -35,11 +33,9 @@ export default function SettingsScreen() {
     };
 
     return (
-        <View style={styles.container}>
-            <Text>Settings Screen</Text>
-            <Text>Current System State: {systemState ? "On" : "Off"}</Text>
+        <View style={[baseStyles.row, styles.container]}>
+            <Text style={baseStyles.subtitle}>Current System State: {systemState ? "On" : "Off"}</Text>
             <Switch onValueChange={handleToggleSystemState} value={systemState}/>
-            <MyButton HandleOnPress={handleToggleSystemState} ButtonText={"Toggle System State"}/>
         </View>
     );
 }

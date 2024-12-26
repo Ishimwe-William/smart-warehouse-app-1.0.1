@@ -17,9 +17,9 @@ export default function HomeScreen() {
         <ScrollView contentContainerStyle={{flexGrow: 1}}>
             <View style={[baseStyles.container, {alignItems: "center"}]}>
                 <MyButton selected={true} HandleOnPress={() => navigation.navigate('Settings')}
-                          ButtonText={"Go To Settings"}/>
+                          ButtonText={"Warehouse System Control"}/>
                 <MyButton selected={true} HandleOnPress={() => navigation.navigate('Requests')}
-                          ButtonText={"Go To Requests"}/>
+                          ButtonText={"Requests"}/>
             </View>
         </ScrollView>
     );
