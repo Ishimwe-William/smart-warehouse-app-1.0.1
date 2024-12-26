@@ -143,7 +143,9 @@ export const RequestStatusModal = ({
     const renderApprovalForm = () => (
         <>
             <View style={baseStyles.row}>
-                <Text style={baseStyles.buttonText}>Use my email ({user.email})</Text>
+                <Text
+                    style={baseStyles.buttonText}>{`Your email: ${user.email.substring(0, 6)}...${user.email.substring(user.email.indexOf('@'))}`}
+                </Text>
                 <Switch
                     value={useLoggedInEmail}
                     onValueChange={(newValue) => {
