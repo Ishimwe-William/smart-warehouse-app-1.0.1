@@ -233,7 +233,8 @@ export default function RequestsScreen() {
                                 <>
                                     <View style={styles.separator}/>
                                     <View style={styles.rowBetween}>
-                                        <Text style={styles.requestInfo}>Schedule Info:</Text>
+                                        <Text
+                                            style={styles.requestInfo}>{item.status === RequestStatus.CANCELLED ? "Cancellation" : "Schedule"} Info:</Text>
                                         <Text style={styles.dateText}>Updated: {formattedDate(item.updated_at)}</Text>
                                     </View>
                                     {item.status === RequestStatus.APPROVED && (

@@ -3,10 +3,12 @@ import HomeStack from '../stacks/HomeStack';
 import DashboardStack from '../stacks/DashboardStack';
 import ProfileStack from '../stacks/ProfileStack';
 import {primaryColor} from '../../utils/colors';
+import {useAuth} from "../../context/AuthContext";
 
 const Tab = createMaterialTopTabNavigator();
 
 export const NavTabs = () => {
+    const {userRole} = useAuth();
     return (
         <Tab.Navigator
             tabBarPosition="bottom"
@@ -16,7 +18,9 @@ export const NavTabs = () => {
             }}
         >
             <Tab.Screen name="HomeStack" component={HomeStack} options={{tabBarLabel: 'Home'}}/>
-            <Tab.Screen name="DashboardStack" component={DashboardStack} options={{tabBarLabel: 'Dashboard'}}/>
+            {userRole !== "Agronomist" && (
+                <Tab.Screen name="DashboardStack" component={DashboardStack} options={{tabBarLabel: 'Dashboard'}}/>
+            )}
             <Tab.Screen name="ProfileStack" component={ProfileStack} options={{tabBarLabel: 'Profile'}}/>
         </Tab.Navigator>
     );
