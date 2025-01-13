@@ -8,7 +8,6 @@ import {highColor, lowColor, middleColor} from "../../utils/colors";
 import {DataStatus} from "../../components/DataStatus";
 import {
     fetchMostRecentData,
-    fetchNotifications,
     fetchThresholds,
     saveNotificationToFirebase,
     updateThresholds
@@ -19,8 +18,6 @@ import {useAuth} from "../../context/AuthContext";
 const {width, height} = Dimensions.get("window");
 const isTablet = Math.min(width, height) >= 600;
 
-const notificationPath = "warehouse/notification"
-
 export const DashboardScreen = () => {
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [newHumLowThreshold, setNewHumLowThreshold] = useState("");
@@ -30,13 +27,13 @@ export const DashboardScreen = () => {
     const navigation = useNavigation();
     const [tempRangeColor, setTempRangeColor] = useState(middleColor);
     const [humRangeColor, setHumRangeColor] = useState(middleColor);
-    const [notifications, setNotifications] = useState([]);
-    const {userRole} = useAuth();
+    const {userRole, user} = useAuth();
 
     const [data, setData] = useState({
         temp: 0,
         hum: 0,
     });
+
     const [thresholds, setThresholds] = useState({
         humLowThreshold: 40,
         humHighThreshold: 60,
@@ -50,6 +47,7 @@ export const DashboardScreen = () => {
         });
     }, []);
 
+    // Initial thresholds fetch
     useEffect(() => {
         fetchThresholds().then((data) => {
             if (data) {
@@ -70,8 +68,6 @@ export const DashboardScreen = () => {
                 temp: recentData.temperature,
                 hum: recentData.humidity,
             });
-        } else {
-            console.log('No recent data available');
         }
     };
 
@@ -85,25 +81,26 @@ export const DashboardScreen = () => {
                     prev.tempLowThreshold !== fetchedThresholds.tempLowThreshold ||
                     prev.tempHighThreshold !== fetchedThresholds.tempHighThreshold
                 ) {
-                    return fetchedThresholds; // Update only if thresholds changed
+                    return fetchedThresholds;
                 }
-                return prev; // Avoid redundant updates
+                return prev;
             });
         }
     };
 
+    // Periodic data and thresholds fetch
     useEffect(() => {
         fetchData();
         fetchThresholdsFromFirebase();
         const intervalId = setInterval(() => {
             fetchData();
-        }, 5000); // 5000 ms = 5 seconds
+        }, 5000);
         return () => clearInterval(intervalId);
     }, []);
 
+    // Threshold monitoring and notification handling
     useEffect(() => {
-        const checkAndSaveNotification = async (type, value, threshold) => {
-            // Ensure values are numbers before comparing
+        const checkAndSaveNotification = async (type, value, thresholdConfig) => {
             const numericValue = parseFloat(value);
             if (isNaN(numericValue)) {
                 console.error(`Invalid value for ${type}: ${value}`);
@@ -113,94 +110,70 @@ export const DashboardScreen = () => {
             // Prevent notification for zero values
             if (data.hum === 0 && data.temp === 0) return;
 
-            // Determine if the value is out of the new threshold range
-            const isOutOfRange = numericValue < threshold.low || numericValue > threshold.high;
+            const isOutOfRange = numericValue < thresholdConfig.low || numericValue > thresholdConfig.high;
 
             if (isOutOfRange) {
                 const notification = {
                     type: `${type} Threshold Alert`,
                     message: `${type} is ${
-                        numericValue < threshold.low ? "below" : "above"
-                    } the new threshold (${numericValue}${type === 'Temperature' ? '°C' : '%'})`,
+                        numericValue < thresholdConfig.low ? "below" : "above"
+                    } the threshold (${numericValue}${type === 'Temperature' ? '°C' : '%'})`,
                     value: numericValue,
-                    read: false,
                     timestamp: new Date().toISOString(),
-                    thresholdChanged: true  // Add a flag to indicate threshold-related notification
+                    thresholdChanged: true,
+                    alertType: numericValue < thresholdConfig.low ? 'low' : 'high',
+                    measurementType: type.toLowerCase()
                 };
 
-                // Set color based on threshold range
-                if (numericValue < threshold.low) {
-                    // Below threshold
-                    if (type === 'Temperature') {
-                        setTempRangeColor(lowColor);
-                    } else {
-                        setHumRangeColor(lowColor);
-                    }
+                // Update UI color
+                if (type === 'Temperature') {
+                    setTempRangeColor(numericValue < thresholdConfig.low ? lowColor : highColor);
                 } else {
-                    // Above threshold
-                    if (type === 'Temperature') {
-                        setTempRangeColor(highColor);
-                    } else {
-                        setHumRangeColor(highColor);
-                    }
+                    setHumRangeColor(numericValue < thresholdConfig.low ? lowColor : highColor);
                 }
 
-                // Check if a similar unread notification already exists
-                const existingUnreadNotification = notifications.find(
-                    n => n.type === notification.type &&
-                        n.message === notification.message &&
-                        n.read === false
-                );
-
-                if (!existingUnreadNotification) {
-                    try {
-                        await saveNotificationToFirebase(
-                            `${notificationPath}/${type.toLowerCase()}/`,
-                            notification
-                        );
-                    } catch (error) {
-                        console.error(`Error saving ${type} notification:`, error);
-                    }
+                try {
+                    // Save as a general notification
+                    await saveNotificationToFirebase(notification);
+                } catch (error) {
+                    console.error(`Error saving ${type} notification:`, error);
                 }
             } else {
                 // Reset color when back in range
-                type === "Temperature" ? setTempRangeColor(middleColor) : setHumRangeColor(middleColor)
+                if (type === "Temperature") {
+                    setTempRangeColor(middleColor);
+                } else {
+                    setHumRangeColor(middleColor);
+                }
             }
         };
 
-        // Thresholds object with structured low and high values
-        const thresholdConfig = {
-            Temperature: {
+        if (data && thresholds) {
+            checkAndSaveNotification('Temperature', data.temp, {
                 low: thresholds.tempLowThreshold,
                 high: thresholds.tempHighThreshold
-            },
-            Humidity: {
+            });
+            checkAndSaveNotification('Humidity', data.hum, {
                 low: thresholds.humLowThreshold,
                 high: thresholds.humHighThreshold
-            }
-        };
-
-        // Check and save notifications
-        checkAndSaveNotification('Temperature', data.temp, thresholdConfig.Temperature);
-        checkAndSaveNotification('Humidity', data.hum, thresholdConfig.Humidity);
-
-    }, [data.temp, data.hum, thresholds, notifications]);
-
-    useEffect(() => {
-        fetchNotifications(notificationPath, setNotifications);
-    }, [data.temp, data.hum]);
+            });
+        }
+    }, [data, thresholds, user]);
 
     const saveThresholds = async () => {
         if (
             isNaN(newHumLowThreshold) || isNaN(newHumHighThreshold) ||
             isNaN(newTempLowThreshold) || isNaN(newTempHighThreshold)
         ) {
-            Alert.alert("Error", "Threshold values must be numeric.")
-            console.error("Threshold values must be numeric.");
+            Alert.alert("Error", "Threshold values must be numeric.");
             return;
-        } else if (parseFloat(newHumHighThreshold) < parseFloat(newHumLowThreshold) || parseFloat(newTempHighThreshold) < parseFloat(newTempLowThreshold)) {
-            Alert.alert("Invalid data", "High value can not be lower to Low value")
-            console.error("Threshold values invalid.");
+        }
+
+        if (
+            parseFloat(newHumHighThreshold) < parseFloat(newHumLowThreshold) ||
+            parseFloat(newTempHighThreshold) < parseFloat(newTempLowThreshold)
+        ) {
+            Alert.alert("Invalid data", "High value cannot be lower than Low value");
             return;
         }
 
@@ -214,12 +187,31 @@ export const DashboardScreen = () => {
         await updateThresholds(updatedThresholds);
         setThresholds(updatedThresholds);
         setIsModalVisible(false);
+
+        // Create threshold update notification
+        const thresholdNotification = {
+            type: 'Threshold Update',
+            message: 'Temperature and Humidity thresholds have been updated',
+            timestamp: new Date().toISOString(),
+            changes: {
+                temperature: {
+                    low: updatedThresholds.tempLowThreshold,
+                    high: updatedThresholds.tempHighThreshold
+                },
+                humidity: {
+                    low: updatedThresholds.humLowThreshold,
+                    high: updatedThresholds.humHighThreshold
+                }
+            }
+        };
+
+        // Save as general notification since threshold changes affect all users
+        await saveNotificationToFirebase(thresholdNotification);
     };
 
     const handleSaveThresholds = () => {
         saveThresholds();
-        setIsModalVisible(false);
-    }
+    };
     return (
         <>
             <ScrollView contentContainerStyle={styles.container}>

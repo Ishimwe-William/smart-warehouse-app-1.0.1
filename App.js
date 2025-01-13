@@ -6,14 +6,14 @@ import {NotificationProvider} from "./src/context/NotificationContext";
 import {NetworkProvider} from "./src/context/NetworkContext";
 
 export default function App() {
-  return (
-      <NotificationProvider>
+    return (
         <NetworkProvider>
-          <AuthProvider>
-            <MainNavigation/>
-            <StatusBar style="dark"/>
-          </AuthProvider>
+            <AuthProvider>
+                <NotificationProvider>
+                    <MainNavigation/>
+                    <StatusBar style="dark"/>
+                </NotificationProvider>
+            </AuthProvider>
         </NetworkProvider>
-      </NotificationProvider>
-  );
+    );
 }

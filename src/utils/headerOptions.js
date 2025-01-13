@@ -6,7 +6,7 @@ import {useNotification} from "../context/NotificationContext";
 
 // Create a separate component for the notification button
 const NotificationButton = ({navigation}) => {
-    const {unreadNotifications} = useNotification();
+    const {totalUnreadCount} = useNotification();
 
     const handleNotPress = () => {
         navigation.navigate("NotificationsScreen");
@@ -23,7 +23,7 @@ const NotificationButton = ({navigation}) => {
         >
             <View>
                 <Ionicons name="notifications-outline" size={24} color="black"/>
-                {unreadNotifications && (
+                {totalUnreadCount > 0 && (
                     <View
                         style={{
                             position: "absolute",
