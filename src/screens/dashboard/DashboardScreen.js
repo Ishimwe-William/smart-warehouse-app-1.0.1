@@ -32,6 +32,8 @@ export const DashboardScreen = () => {
     const [data, setData] = useState({
         temp: 0,
         hum: 0,
+        created_time: "",
+        created_date: "",
     });
 
     const [thresholds, setThresholds] = useState({
@@ -67,6 +69,8 @@ export const DashboardScreen = () => {
             setData({
                 temp: recentData.temperature,
                 hum: recentData.humidity,
+                created_time: recentData.createdAt_time,
+                created_date: recentData.createdAt_date,
             });
         }
     };
@@ -134,7 +138,7 @@ export const DashboardScreen = () => {
 
                 try {
                     // Save as a general notification
-                    await saveNotificationToFirebase(notification);
+                    // await saveNotificationToFirebase(notification);
                 } catch (error) {
                     console.error(`Error saving ${type} notification:`, error);
                 }
@@ -218,6 +222,8 @@ export const DashboardScreen = () => {
                 <SafeAreaView>
                     <View style={styles.contentContainer}>
                         <Text style={baseStyles.title}>Recent Data</Text>
+                        <Text
+                            style={[baseStyles.dateText, {textAlign: "center"}]}>{data.created_date} {data.created_time}</Text>
                         <View style={baseStyles.row}>
                             <Text style={baseStyles.subtitle}>Indicators:</Text>
                             <IndicatorGrid highColor={highColor} middleColor={middleColor} lowColor={lowColor}/>

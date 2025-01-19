@@ -21,6 +21,7 @@ import {fetchRequests, sendRequest} from "../../utils/firestoreUtil";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {RequestStatusModal} from "../../components/RequestStatusModal";
 import {RequestStatus} from "../../utils/RequestStatus";
+import {saveNotificationToFirebase} from "../../utils/rtdbUtils";
 
 export default function RequestsScreen() {
     const [selectedView, setSelectedView] = useState("all"); // Track selected view state
@@ -41,6 +42,7 @@ export default function RequestsScreen() {
     useLayoutEffect(() => {
         navigation.setOptions({
             headerTitle: "Requests",
+            headerLeft: undefined,
         });
     }, []);
 
@@ -118,6 +120,16 @@ export default function RequestsScreen() {
             };
 
             await sendRequest(requestData); // Use the Firestore helper function
+
+            const notification = {
+                type: `Request Sent Successfully`,
+                message: `${requestData.type} request successfully sent to an Agronomist. You will be notified for an appointment.`,
+                timestamp: new Date().toISOString(),
+                measurementType: requestData.type.toLowerCase()
+            };
+
+            await saveNotificationToFirebase(notification, user.uid)
+
             Alert.alert("Success", "Your request has been sent successfully!");
             handleCancel(); // Close the modal
         } catch (error) {

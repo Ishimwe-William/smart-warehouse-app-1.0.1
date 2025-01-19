@@ -48,6 +48,7 @@ export const DetailsGraphScreen = () => {
     useLayoutEffect(() => {
         navigation.setOptions({
             headerTitle: "Warehouse Data",
+            headerLeft: undefined,
         });
     }, []);
 

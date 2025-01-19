@@ -95,7 +95,7 @@ const NotificationItem = ({notification, onPress, onLongPress, selected}) => {
 
 export const NotificationsScreen = () => {
     const navigation = useNavigation();
-    const {user} = useAuth();
+    const {user, userRole} = useAuth();
     const {clearNewAlertsFlag} = useNotification();
     const [notifications, setNotifications] = useState([]);
     const [refreshing, setRefreshing] = useState(false);

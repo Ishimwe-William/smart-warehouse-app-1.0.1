@@ -5,11 +5,13 @@ import {Ionicons} from "@expo/vector-icons";
 import {useNotification} from "../context/NotificationContext";
 
 // Create a separate component for the notification button
-const NotificationButton = ({navigation}) => {
+const IconButton = ({navigation, goTo}) => {
     const {totalUnreadCount} = useNotification();
+    const isNotification = goTo === "Notification";
 
     const handleNotPress = () => {
-        navigation.navigate("NotificationsScreen");
+        if (isNotification) navigation.navigate("NotificationsScreen");
+        else navigation.navigate("HomeStack");
     };
 
     return (
@@ -22,8 +24,9 @@ const NotificationButton = ({navigation}) => {
             }}
         >
             <View>
-                <Ionicons name="notifications-outline" size={24} color="black"/>
-                {totalUnreadCount > 0 && (
+                <Ionicons name={isNotification ? "notifications-outline" : "home-outline"} size={24}
+                          color="black"/>
+                {totalUnreadCount > 0 && isNotification && (
                     <View
                         style={{
                             position: "absolute",
@@ -51,5 +54,6 @@ export const defaultHeaderOptions = ({navigation, route}) => ({
         borderBottomWidth: 3,
     },
     headerTitleAlign: "center",
-    headerRight: () => <NotificationButton navigation={navigation}/>,
+    headerRight: () => <IconButton goTo={"Notification"} navigation={navigation}/>,
+    headerLeft: () => <IconButton goTo={"Home"} navigation={navigation}/>,
 });

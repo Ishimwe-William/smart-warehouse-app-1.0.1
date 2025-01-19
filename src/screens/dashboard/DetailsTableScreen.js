@@ -1,18 +1,9 @@
-import React from 'react';
-import {
-    SafeAreaView,
-    View,
-    Text,
-    StyleSheet,
-    FlatList,
-    ActivityIndicator,
-    Dimensions,
-} from "react-native";
+import React, {useLayoutEffect} from 'react';
+import {ActivityIndicator, Dimensions, FlatList, SafeAreaView, StyleSheet, Text, View,} from "react-native";
 
 import {useWarehouseData} from '../../hooks/useWarehouseData';
 import {TimeframeSelector} from '../../components/TimeframeSelector';
 import {styles as baseStyles} from '../../utils/styles';
-import {useLayoutEffect} from "react";
 import {useNavigation} from "@react-navigation/native";
 
 const {width, height} = Dimensions.get("window");
@@ -34,6 +25,7 @@ export const DetailsTableScreen = () => {
     useLayoutEffect(() => {
         navigation.setOptions({
             headerTitle: "Warehouse Raw Data",
+            headerLeft: undefined,
         });
     }, []);
 

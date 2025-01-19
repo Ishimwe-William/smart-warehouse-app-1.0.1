@@ -59,9 +59,9 @@ export const fetchMostRecentData = async (path) => {
         if (snapshot.exists()) {
             const data = snapshot.val();
 
-            // Extract entries and sort by key (timestamp in descending order)
+            // Extract entries and sort by key (formatted as YYYY-MM-DD_HH:mm:ss) in descending order
             const sortedEntries = Object.entries(data).sort((a, b) =>
-                new Date(b[0]) - new Date(a[0])
+                new Date(b[0].replace("_", "T")) - new Date(a[0].replace("_", "T"))
             );
 
             // Get the most recent entry
@@ -83,7 +83,7 @@ export const updateValue = async (path, value) => {
     try {
         await set(dbRef, value);
     } catch (error) {
-        return console.error(`Error updating ${path}:`, error);
+        // return console.error(`Error updating ${path}:`, error);
     }
 };
 

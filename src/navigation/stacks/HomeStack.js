@@ -1,6 +1,6 @@
 import {createStackNavigator} from '@react-navigation/stack';
 import HomeScreen from '../../screens/HomeScreen';
-import SettingsScreen from '../../screens/SettingScreen';
+import SettingsScreen from '../../screens/SystemControlScreen';
 import RequestsScreen from '../../screens/requests/RequestsScreen';
 import {defaultHeaderOptions} from "../../utils/headerOptions";
 

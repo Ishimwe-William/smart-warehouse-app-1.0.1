@@ -18,6 +18,7 @@ import {db} from '../config/firebaseConfig';
 import {doc, updateDoc} from 'firebase/firestore';
 import MessagePopup from '../components/MessagePopup';
 import {useNavigation} from "@react-navigation/native";
+import {saveNotificationToFirebase} from "../utils/rtdbUtils";
 
 const MyRoles = ['User', 'Admin', "Agronomist"];
 
@@ -34,6 +35,7 @@ export const UsersScreen = () => {
     useLayoutEffect(() => {
         navigation.setOptions({
             headerTitle: "Users",
+            headerLeft: undefined,
         });
     }, []);
 
@@ -60,18 +62,28 @@ export const UsersScreen = () => {
         if (selectedUser && selectedRole) {
             try {
                 const userRef = doc(db, "users", selectedUser.id);
-                await updateDoc(userRef, { role: selectedRole });
+                await updateDoc(userRef, {role: selectedRole});
 
                 // Update local state
                 const updatedUsers = users.map(user =>
                     user.id === selectedUser.id
-                        ? { ...user, role: selectedRole }
+                        ? {...user, role: selectedRole}
                         : user
                 );
                 setUsers(updatedUsers);
 
                 // Set success message and close modal
                 setSuccessMessage(`Role updated to ${selectedRole}`);
+
+                const notification = {
+                    type: `Your role is updated`,
+                    message: `Your role is changed to ${selectedRole}. If need help, please contact us.`,
+                    timestamp: new Date().toISOString(),
+                    measurementType: selectedRole.toLowerCase()
+                };
+
+                await saveNotificationToFirebase(notification, selectedUser.id)
+
                 setShowModal(false);
                 setSelectedUser(null);
                 setSelectedRole('');
@@ -94,16 +106,16 @@ export const UsersScreen = () => {
 
     if (isLoading) {
         return (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
                 <Text>Loading users...</Text>
-                <ActivityIndicator size={'large'} />
+                <ActivityIndicator size={'large'}/>
             </View>
         );
     }
 
     if (!users || users.length === 0) {
         return (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
                 <Text style={styles.text}>Users will be shown here!</Text>
             </View>
         );
@@ -114,11 +126,21 @@ export const UsersScreen = () => {
             <FlatList
                 data={users}
                 keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                    <View style={[baseStyles.textContainer, baseStyles.row, { justifyContent: 'space-around', aligns: 'center' }]}>
-                        <Text style={[baseStyles.subtitle, { marginLeft: -20 }]}>{item.email}</Text>
-                        <Text style={[baseStyles.text, { fontSize: 16, fontWeight: 'bold', color: "#5A9AA9" }]}>{item.role}</Text>
-                        <MyButton HandleOnPress={() => { setSelectedUser(item); setShowModal(true); }} ButtonText={"Edit"} />
+                renderItem={({item}) => (
+                    <View style={[baseStyles.textContainer, baseStyles.row, {
+                        justifyContent: 'space-around',
+                        aligns: 'center'
+                    }]}>
+                        <Text style={[baseStyles.subtitle, {marginLeft: -20}]}>{item.email}</Text>
+                        <Text style={[baseStyles.text, {
+                            fontSize: 16,
+                            fontWeight: 'bold',
+                            color: "#5A9AA9"
+                        }]}>{item.role}</Text>
+                        <MyButton HandleOnPress={() => {
+                            setSelectedUser(item);
+                            setShowModal(true);
+                        }} ButtonText={"Edit"}/>
                     </View>
                 )}
             />
@@ -129,7 +151,7 @@ export const UsersScreen = () => {
                 transparent={true}
                 onRequestClose={() => setShowModal(false)}
             >
-                <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+                <ScrollView contentContainerStyle={{flexGrow: 1}}>
                     <View style={styles.modalOverlay}>
                         <View style={styles.modalContainer}>
                             <Text style={styles.modalTitle}>Change Role</Text>
@@ -183,7 +205,7 @@ export const UsersScreen = () => {
             </Modal>
             <MessagePopup
                 text={successMessage}
-                moreStyle={{ top: -20 }}
+                moreStyle={{top: -20}}
                 type={'success'}
                 visible={!!successMessage}
                 onDismiss={() => setSuccessMessage('')}
@@ -206,7 +228,7 @@ const styles = StyleSheet.create({
         width: '85%',
         maxWidth: 400,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
+        shadowOffset: {width: 0, height: 4},
         shadowOpacity: 0.2,
         shadowRadius: 5,
         elevation: 10,
