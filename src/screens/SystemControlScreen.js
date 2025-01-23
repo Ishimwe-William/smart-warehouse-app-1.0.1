@@ -42,20 +42,19 @@ export default function SettingsScreen() {
 
     return (
         <View style={styles.container}>
-            <Text style={baseStyles.subtitle}>System is {systemState ? "UP" : "DOWN"}</Text>
-            {/*<Switch onValueChange={handleToggleSystemState} value={systemState}/>*/}
+            <Text style={baseStyles.subtitle}>System is {!systemState ? "UP" : "DOWN"}</Text>
             <View style={styles.toggleButtonContainer}>
                 <TouchableOpacity
                     disabled={systemState}
                     onPress={handleToggleSystemState}
                     style={[styles.toggleButton, systemState && styles.activeButton]}>
-                    <Text style={[styles.buttonText, systemState && styles.activeButtonText]}>ON</Text>
+                    <Text style={[styles.buttonText, systemState && styles.activeButtonText]}>OFF</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     disabled={!systemState}
                     onPress={handleToggleSystemState}
                     style={[styles.toggleButton, !systemState && styles.activeButton]}>
-                    <Text style={[styles.buttonText, !systemState && styles.activeButtonText]}>OFF</Text>
+                    <Text style={[styles.buttonText, !systemState && styles.activeButtonText]}>ON</Text>
                 </TouchableOpacity>
             </View>
         </View>

@@ -42,7 +42,7 @@ export default function HomeScreen() {
     return (
         <ScrollView contentContainerStyle={{flexGrow: 1}}>
             <View style={styles.welcomeContainer}>
-                <Text style={baseStyles.subtitle}>Welcome {user.email}</Text>
+                <Text style={baseStyles.subtitle}>Welcome {user.displayName ? user.displayName : user.email}!</Text>
             </View>
             <Animated.View
                 style={[

@@ -6,11 +6,13 @@ import {updateRequestStatus} from '../utils/firestoreUtil';
 import {RequestStatus} from "../utils/RequestStatus";
 import {useAuth} from "../context/AuthContext";
 import {styles as baseStyles} from "../utils/styles";
+import {saveNotificationToFirebase} from "../utils/rtdbUtils";
 
 export const RequestStatusModal = ({
                                        visible,
                                        onClose,
                                        requestId,
+                                       userId,
                                        onStatusUpdated
                                    }) => {
     const [mode, setMode] = useState('approve');
@@ -79,6 +81,13 @@ export const RequestStatusModal = ({
             };
 
             await updateRequestStatus(requestId, statusData);
+            const notification = {
+                type: `Request ${mode === 'approve' ? 'approved' : 'rejected'}`,
+                message: `Your request was ${mode === 'approve' ? 'approved. Check for scheduled time' : 'rejected. If you have any problem, reach out to you Agronomist'}.`,
+                timestamp: new Date().toISOString(),
+            };
+            await saveNotificationToFirebase(notification, userId)
+
             Alert.alert(
                 'Success',
                 `Request ${mode === 'approve' ? 'approved' : 'rejected'} successfully`

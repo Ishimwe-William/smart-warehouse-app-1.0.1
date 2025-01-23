@@ -33,6 +33,7 @@ export default function RequestsScreen() {
     });
     const [statusModalVisible, setStatusModalVisible] = useState(false);
     const [selectedRequestId, setSelectedRequestId] = useState(null);
+    const [userId, setUserId] = useState(null);
     const [requests, setRequests] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [expandedRequestId, setExpandedRequestId] = useState(null); // Track expanded request ID
@@ -117,6 +118,7 @@ export default function RequestsScreen() {
                 phone: formData.phone,
                 name: formData.name,
                 user_email: user?.email || "anonymous@example.com",
+                user_id: user?.uid,
             };
 
             await sendRequest(requestData); // Use the Firestore helper function
@@ -208,6 +210,7 @@ export default function RequestsScreen() {
                         HandleOnPress={() => {
                             setSelectedRequestId(item.id);
                             setStatusModalVisible(true);
+                            setUserId(item.user_id);
                         }}
                     />;
                 }
@@ -427,6 +430,7 @@ export default function RequestsScreen() {
                 }}
                 requestId={selectedRequestId}
                 onStatusUpdated={fetchRequestsData}
+                userId={userId}
             />
         </SafeAreaView>
     );
