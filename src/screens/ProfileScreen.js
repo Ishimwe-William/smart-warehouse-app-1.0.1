@@ -21,10 +21,11 @@ export const ProfileScreen = () => {
 
     const handleLogout = () => {
         logout();
+        navigation.navigate('Auth');
     };
 
     const handleUpdateName = async () => {
-        if (user && displayName.trim()) {
+        if (user && displayName?.trim()) {
             try {
                 // Update the user's display name in Firebase Authentication
                 await updateProfile(user, {displayName: displayName.trim()});

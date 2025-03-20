@@ -79,7 +79,7 @@ export const AuthProvider = ({ children }) => {
                     onPress: async () => {
                         try {
                             setAuthState((prev) => ({ ...prev, authError: null }));
-                            await signOut(auth); // Firebase logout
+                            await signOut(auth);
                             setAuthState({ user: null, userRole: DEFAULT_ROLE, loading: false, authError: null });
                         } catch (error) {
                             if (__DEV__) {

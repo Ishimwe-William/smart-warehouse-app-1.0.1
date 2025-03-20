@@ -1,10 +1,14 @@
-import React, {useLayoutEffect} from 'react';
-import {ActivityIndicator, Dimensions, FlatList, SafeAreaView, StyleSheet, Text, View,} from "react-native";
+import React, {useCallback, useLayoutEffect} from 'react';
+import {ActivityIndicator, Alert, Dimensions, FlatList, SafeAreaView, StyleSheet, Text, View,} from "react-native";
+import * as FileSystem from 'expo-file-system';
 
 import {useWarehouseData} from '../../hooks/useWarehouseData';
 import {TimeframeSelector} from '../../components/TimeframeSelector';
 import {styles as baseStyles} from '../../utils/styles';
 import {useNavigation} from "@react-navigation/native";
+import * as Sharing from "expo-sharing";
+import {LinkButton} from "../../components/LinkButton";
+import {exportWarehouseData} from "../../utils/exportUtils";
 
 const {width, height} = Dimensions.get("window");
 const isTablet = Math.min(width, height) >= 600;
@@ -29,6 +33,11 @@ export const DetailsTableScreen = () => {
         });
     }, []);
 
+    const handleExport = () => {
+        exportWarehouseData(data, timeframe);
+    };
+
+
     const renderRow = ({item}) => (
         <View style={styles.row}>
             <Text style={styles.cell}>{item.createdAt}</Text>
@@ -37,10 +46,17 @@ export const DetailsTableScreen = () => {
         </View>
     );
 
-
     return (
         <SafeAreaView style={{flex: 1}}>
             <View style={styles.container}>
+
+                <LinkButton
+                    size={14}
+                    weight={'400'}
+                    color='#5A9AA9'
+                    title="Export to CSV"
+                    onClick={() => data.length === 0 ? Alert.alert("No data to export") : handleExport()}                />
+
                 <TimeframeSelector
                     timeframe={timeframe}
                     setTimeframe={setTimeframe}

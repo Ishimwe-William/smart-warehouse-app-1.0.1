@@ -235,7 +235,6 @@ export const DashboardScreen = () => {
                               ButtonText={"View Data Graph"}/>
                 </SafeAreaView>
             </ScrollView>
-            {/*ToDo: Admin to be the one only to update the thresholds*/}
             <Modal
                 visible={isModalVisible}
                 animationType="slide"

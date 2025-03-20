@@ -283,8 +283,6 @@ export default function RequestsScreen() {
                                     )}
                                 </>
                             )}
-
-
                         </>
                     )}
                 </View>
@@ -493,6 +491,7 @@ const styles = StyleSheet.create({
     requestContainer: {
         justifyContent: "space-around",
         width: "100%",
+        marginBottom: 20
     },
     title: {
         fontSize: 20,

@@ -1,5 +1,5 @@
 import {
-    ActivityIndicator,
+    ActivityIndicator, Alert,
     Dimensions,
     Modal,
     SafeAreaView,
@@ -18,9 +18,10 @@ import {TimeframeSelector} from '../../components/TimeframeSelector';
 import {LinkButton} from "../../components/LinkButton";
 import {styles as baseStyles} from '../../utils/styles';
 import {primaryColor} from "../../utils/colors";
-import {useEffect, useLayoutEffect, useState} from "react";
+import React, {useEffect, useLayoutEffect, useState} from "react";
 import {useNavigation} from "@react-navigation/native";
 import PointsControl from "../../components/PointsControl";
+import {exportWarehouseData} from "../../utils/exportUtils";
 
 const {width, height} = Dimensions.get("window");
 const isTablet = Math.min(width, height) >= 600;
@@ -131,6 +132,10 @@ export const DetailsGraphScreen = () => {
         }
     };
 
+    const handleExport = () => {
+        exportWarehouseData(data, timeframe);
+    };
+
     const handlePointsChange = (newPoints) => {
         setPointsToShow(newPoints);
     };
@@ -138,6 +143,12 @@ export const DetailsGraphScreen = () => {
         <SafeAreaView style={{flex: 1}}>
             <ScrollView>
                 <View style={styles.container}>
+                    <LinkButton
+                        size={14}
+                        weight={'400'}
+                        color='#5A9AA9'
+                        title="Export to CSV"
+                        onClick={() => data.length === 0 ? Alert.alert("No data to export") : handleExport()}                    />
                     <TimeframeSelector
                         timeframe={timeframe}
                         setTimeframe={setTimeframe}

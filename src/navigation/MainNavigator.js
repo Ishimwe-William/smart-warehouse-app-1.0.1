@@ -25,7 +25,11 @@ export const MainNavigation = () => {
 
     return (
         <NavigationContainer>
-            <Stack.Navigator screenOptions={{headerShown: false}}>
+            <Stack.Navigator
+                screenOptions={{headerShown: false}}
+                // Add this line to set initial route based on authentication state
+                initialRouteName={user ? (user.emailVerified ? "MyTabs" : "EmailVerification") : "Auth"}
+            >
                 {user && (
                     user.emailVerified ? (
                         <>
