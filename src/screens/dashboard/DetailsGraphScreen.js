@@ -18,7 +18,7 @@ import {TimeframeSelector} from '../../components/TimeframeSelector';
 import {LinkButton} from "../../components/LinkButton";
 import {styles as baseStyles} from '../../utils/styles';
 import {primaryColor} from "../../utils/colors";
-import React, {useEffect, useLayoutEffect, useState} from "react";
+import React, {useCallback, useEffect, useLayoutEffect, useState} from "react";
 import {useNavigation} from "@react-navigation/native";
 import PointsControl from "../../components/PointsControl";
 import {exportWarehouseData} from "../../utils/exportUtils";
@@ -132,9 +132,14 @@ export const DetailsGraphScreen = () => {
         }
     };
 
-    const handleExport = () => {
+    // Handle export button click with proper error checking
+    const handleExport = useCallback(() => {
+        if (data.length === 0) {
+            Alert.alert("No Data", "There is no data to export.");
+            return;
+        }
         exportWarehouseData(data, timeframe);
-    };
+    }, [data, timeframe]);
 
     const handlePointsChange = (newPoints) => {
         setPointsToShow(newPoints);
@@ -146,7 +151,8 @@ export const DetailsGraphScreen = () => {
                     <LinkButton
                         size={14}
                         weight={'400'}
-                        color='#5A9AA9'
+                        disabled={isLoading || data.length === 0}
+                        color={isLoading || data.length === 0 ? '#AAAAAA' : '#5A9AA9'}
                         title="Export to CSV"
                         onClick={() => data.length === 0 ? Alert.alert("No data to export") : handleExport()}                    />
                     <TimeframeSelector

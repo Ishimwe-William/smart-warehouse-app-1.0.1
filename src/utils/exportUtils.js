@@ -1,50 +1,80 @@
-// src/utils/exportUtils.js
 import { Alert, Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+import * as MediaLibrary from 'expo-media-library';
+import { StorageAccessFramework } from 'expo-file-system';
 
 /**
- * Converts an array of data objects to CSV format
- * @param {Array} dataArray - Array of data objects to convert
- * @param {Array} headers - Array of header names
- * @param {Array} keys - Array of object keys corresponding to headers
- * @returns {string} CSV formatted string
+ * Converts an array of objects to a CSV string
  */
 export const convertToCSV = (dataArray, headers, keys) => {
-    if (!dataArray || dataArray.length === 0) {
-        return '';
-    }
+    if (!dataArray || dataArray.length === 0) return '';
 
-    // Create header row
     const headerRow = headers;
-
-    // Create data rows by mapping each item to its corresponding keys
     const dataRows = dataArray.map(item =>
         keys.map(key => {
             const value = item[key];
-            // Handle cases where values might contain commas
             return typeof value === 'string' && value.includes(',')
                 ? `"${value}"`
                 : value;
         })
     );
 
-    // Combine all rows
     const allRows = [headerRow, ...dataRows];
-
-    // Convert to CSV format
-    const csvContent = allRows.map(row => row.join(',')).join('\n');
-
-    return csvContent;
+    return allRows.map(row => row.join(',')).join('\n');
 };
 
 /**
- * Export data to a CSV file and share it
- * @param {Array} data - Array of data objects to export
- * @param {Array} headers - Array of header names for CSV
- * @param {Array} keys - Array of object keys corresponding to headers
- * @param {string} filePrefix - Prefix for the filename
- * @returns {Promise<void>}
+ * Save file to Media Library (alternative to Downloads)
+ */
+const saveToMediaLibrary = async (content, fileName) => {
+    try {
+        // Request permissions
+        const { status } = await MediaLibrary.requestPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Permission needed', 'Storage permission is required to save the file');
+            return false;
+        }
+
+        // Create a temporary file
+        const tempFileUri = FileSystem.documentDirectory + fileName;
+        await FileSystem.writeAsStringAsync(tempFileUri, content);
+
+        // Save to media library
+        const asset = await MediaLibrary.createAssetAsync(tempFileUri);
+        await MediaLibrary.createAlbumAsync('CSVExports', asset, false);
+
+        Alert.alert('Success', 'File saved to media library in the CSVExports album');
+        return true;
+    } catch (error) {
+        console.error('MediaLibrary save error:', error);
+        return false;
+    }
+};
+
+/**
+ * Share file using system dialog
+ */
+const shareFile = async (content, fileName, mimeType) => {
+    const fileUri = `${FileSystem.documentDirectory}${fileName}`;
+    await FileSystem.writeAsStringAsync(fileUri, content);
+
+    const isSharingAvailable = await Sharing.isAvailableAsync();
+    if (isSharingAvailable) {
+        await Sharing.shareAsync(fileUri, {
+            mimeType,
+            dialogTitle: 'Share CSV File',
+            UTI: 'public.comma-separated-values-text'
+        });
+        return true;
+    } else {
+        Alert.alert('Sharing Not Available', 'Cannot share file on this device.');
+        return false;
+    }
+};
+
+/**
+ * Export and share data as CSV
  */
 export const exportDataToCSV = async (data, headers, keys, filePrefix = 'exported_data') => {
     if (!data || data.length === 0) {
@@ -56,38 +86,76 @@ export const exportDataToCSV = async (data, headers, keys, filePrefix = 'exporte
         const csvContent = convertToCSV(data, headers, keys);
         const timestamp = new Date().getTime();
         const fileName = `${filePrefix}_${timestamp}.csv`;
-        const fileUri = `${FileSystem.documentDirectory}${fileName}`;
+        const mimeType = 'text/csv';
 
-        // Write CSV content to a file
-        await FileSystem.writeAsStringAsync(fileUri, csvContent);
+        if (Platform.OS === 'android') {
+            try {
+                // Let user explicitly choose where to save the file
+                Alert.alert(
+                    "Choose Folder",
+                    "Please select a folder OTHER THAN Downloads when the file picker opens. Downloads folder may not be writable.",
+                    [{ text: "OK", onPress: async () => {
+                            try {
+                                const permissions = await StorageAccessFramework.requestDirectoryPermissionsAsync();
+                                if (!permissions.granted) {
+                                    console.log("Permission denied or dialog canceled");
+                                    return await shareFile(csvContent, fileName, mimeType);
+                                }
 
-        // Check if sharing is available
-        const isSharingAvailable = await Sharing.isAvailableAsync();
+                                console.log("Selected directory:", permissions.directoryUri);
 
-        if (isSharingAvailable) {
-            // Share the file
-            await Sharing.shareAsync(fileUri, {
-                mimeType: 'text/csv',
-                dialogTitle: 'Save Data as CSV',
-                UTI: 'public.comma-separated-values-text' // For iOS
-            });
-            return true;
+                                // Check if the user selected the problematic Downloads directory
+                                if (permissions.directoryUri.includes('com.android.providers.downloads.documents/tree/downloads')) {
+                                    Alert.alert(
+                                        "Cannot use Downloads folder",
+                                        "The Downloads folder is not writable on this device. Please use the share option instead.",
+                                        [{ text: "Share File", onPress: () => shareFile(csvContent, fileName, mimeType) }]
+                                    );
+                                    return false;
+                                }
+
+                                // Otherwise try to write to the selected directory
+                                try {
+                                    const fileUri = await StorageAccessFramework.createFileAsync(
+                                        permissions.directoryUri,
+                                        fileName,
+                                        mimeType
+                                    );
+
+                                    await FileSystem.writeAsStringAsync(fileUri, csvContent, {
+                                        encoding: FileSystem.EncodingType.UTF8
+                                    });
+
+                                    Alert.alert('Success', `CSV file saved as ${fileName}`);
+                                    return true;
+                                } catch (createFileError) {
+                                    console.error('Error creating file:', createFileError);
+                                    return await shareFile(csvContent, fileName, mimeType);
+                                }
+                            } catch (err) {
+                                console.error('Error with permissions or saving:', err);
+                                return await shareFile(csvContent, fileName, mimeType);
+                            }
+                        }}]
+                );
+                return true; // Return true as we've handled showing UI to the user
+            } catch (error) {
+                console.error('Overall export error:', error);
+                return await shareFile(csvContent, fileName, mimeType);
+            }
         } else {
-            Alert.alert('Sharing not available', 'Sharing is not available on this device.');
-            return false;
+            // iOS or fallback
+            return await shareFile(csvContent, fileName, mimeType);
         }
     } catch (error) {
         console.error('Error exporting data:', error);
-        Alert.alert('Export Error', 'Failed to export data. Please try again.');
+        Alert.alert('Export Error', 'Failed to export data.');
         return false;
     }
 };
 
 /**
- * Export warehouse data specifically formatted for temperature and humidity
- * @param {Array} data - Warehouse data array
- * @param {string} timeframe - Current timeframe for filename
- * @returns {Promise<boolean>} Success status
+ * Export warehouse temperature/humidity data
  */
 export const exportWarehouseData = async (data, timeframe) => {
     if (!data || data.length === 0) {
@@ -98,48 +166,4 @@ export const exportWarehouseData = async (data, timeframe) => {
     const headers = ['Date', 'Temperature (°C)', 'Humidity (%)'];
     const keys = ['createdAt', 'temperature', 'humidity'];
     return exportDataToCSV(data, headers, keys, `warehouse_data_${timeframe}`);
-};
-
-/**
- * Export any tabular data to CSV with custom formatting
- * @param {Object} options - Export options
- * @param {Array} options.data - Data array to export
- * @param {Array} options.headers - Column headers
- * @param {Array} options.keys - Data object keys to extract
- * @param {string} options.filename - Base filename without extension
- * @param {Function} options.transform - Optional function to transform data before export
- * @returns {Promise<boolean>} Success status
- */
-export const exportCustomData = async ({
-                                           data,
-                                           headers,
-                                           keys,
-                                           filename = 'exported_data',
-                                           transform = null
-                                       }) => {
-    if (!data || data.length === 0) {
-        Alert.alert('No Data', 'There is no data to export.');
-        return false;
-    }
-
-    // Apply transformation if provided
-    const processedData = transform ? data.map(transform) : data;
-
-    return exportDataToCSV(processedData, headers, keys, filename);
-};
-
-/**
- * Export data to Excel format (XLSX)
- * Note: This requires additional libraries like xlsx
- * To implement, install: npm install xlsx
- *
- * This is a placeholder for future implementation
- */
-export const exportToExcel = async (data, filename = 'exported_data') => {
-    // This would require additional libraries like xlsx
-    Alert.alert(
-        'Feature Not Available',
-        'Excel export requires additional setup. Please use CSV export for now.'
-    );
-    return false;
 };

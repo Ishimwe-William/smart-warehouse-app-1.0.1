@@ -1,14 +1,14 @@
-import { TouchableOpacity, Text, Dimensions } from "react-native";
+import {TouchableOpacity, Text, Dimensions} from "react-native";
 
-const { width, height } = Dimensions.get("window");
+const {width, height} = Dimensions.get("window");
 const isTablet = Math.min(width, height) >= 600;
 
-export const LinkButton = ({ title, onClick, size = 24, weight = "300", color = '#5A9AA9' }) => {
+export const LinkButton = ({title, onClick, size = 24, weight = "300", color = '#5A9AA9', disabled = false}) => {
     const computedSize = isTablet ? size * 1.2 : size; // Scale size for tablets
     const computedWeight = isTablet ? "400" : weight; // Slightly heavier weight for tablets
 
     return (
-        <TouchableOpacity style={{ marginVertical: isTablet ? 15 : 10 }} onPress={onClick}>
+        <TouchableOpacity style={{marginVertical: isTablet ? 15 : 10}} disabled={disabled} onPress={onClick}>
             <Text
                 style={{
                     textAlign: "center",

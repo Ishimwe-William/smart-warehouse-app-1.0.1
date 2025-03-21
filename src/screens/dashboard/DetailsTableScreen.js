@@ -33,10 +33,14 @@ export const DetailsTableScreen = () => {
         });
     }, []);
 
-    const handleExport = () => {
+    // Handle export button click with proper error checking
+    const handleExport = useCallback(() => {
+        if (data.length === 0) {
+            Alert.alert("No Data", "There is no data to export.");
+            return;
+        }
         exportWarehouseData(data, timeframe);
-    };
-
+    }, [data, timeframe]);
 
     const renderRow = ({item}) => (
         <View style={styles.row}>
@@ -53,7 +57,8 @@ export const DetailsTableScreen = () => {
                 <LinkButton
                     size={14}
                     weight={'400'}
-                    color='#5A9AA9'
+                    disabled={isLoading || data.length === 0}
+                    color={isLoading || data.length === 0 ? '#AAAAAA' : '#5A9AA9'}
                     title="Export to CSV"
                     onClick={() => data.length === 0 ? Alert.alert("No data to export") : handleExport()}                />
 
