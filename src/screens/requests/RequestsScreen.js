@@ -341,7 +341,9 @@ export default function RequestsScreen() {
     return (
         <SafeAreaView style={[baseStyles.container]}>
             <View style={{alignSelf: 'flex-end', marginTop: -30}}>
-                <MyButton ButtonText={"Send Request"} selected={true} HandleOnPress={handleSendRequest}/>
+                {userRole !== "Agronomist" &&
+                    <MyButton ButtonText={"Send Request"} selected={true} HandleOnPress={handleSendRequest}/>
+                }
             </View>
             {/* Switch Selector */}
             <SwitchSelector
